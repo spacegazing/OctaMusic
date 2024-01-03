@@ -1,0 +1,67 @@
+# Being specific, only import functions actually needed.
+import RPi.GPIO as GPIO
+from time import sleep
+from sys import exit
+
+pin = 12  # This is one of two Hardware PWM Pins of the RPi, every other pin will work fine as well
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(pin, GPIO.OUT)
+p = GPIO.PWM(pin, 10)
+
+# Define notes for ISS sound
+notes = {
+    'beep_low': 200,  # Frecuencia para un tono bajo
+    'beep_high': 400,  # Frecuencia para un tono alto
+}
+
+# Define speed for ISS sound
+speed = {
+    'short': 0.1,  # Duración corta para un sonido rápido
+    'medium': 0.3,  # Duración media para un sonido moderado
+    'long': 0.5,  # Duración larga para un sonido más prolongado
+}
+
+# Define ISS sound sequence
+iss_sound = [
+    'beep_low-short', 'beep_high-short', 'beep_low-short', 'beep_high-short',
+    'beep_low-medium', 'beep_high-medium', 'beep_low-medium', 'beep_high-medium',
+    'beep_low-long', 'beep_high-long'
+]
+
+# -----------------------------------------------------------------------------
+# If you're reading this, you shouldn't be here
+# unless you know what you are doing.
+# -----------------------------------------------------------------------------
+# Duty cycle of 50% does his job
+p.start(50)
+
+header = '[Note]\t[Frequency]\t[Duration]' + '\n------\t-----------\t----------'
+printcount = 0
+
+
+def goodbye(msg=''):
+    print(msg + '\n\nDone!. Have a nice experience.\n By Octa Aerospace')
+    exit()
+
+
+def play_sound(sequence):
+    global header, printcount, notes, speed
+    try:
+        print(header)
+        for item in sequence:
+            note, duration = item.split('-')
+            actual_speed = round(float(speed[duration]), 2)
+            print('  ' + note + '\t   ' + str(notes[note]) + '\t   ' + str(actual_speed))
+            printcount += 1
+            if printcount == 23:
+                printcount = 0
+                print(header)
+            p.ChangeFrequency(notes[note])
+            sleep(actual_speed)
+            p.ChangeFrequency(10)
+    except KeyboardInterrupt:
+        goodbye()
+
+
+while True:
+    play_sound(iss_sound)
